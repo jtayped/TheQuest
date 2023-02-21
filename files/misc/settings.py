@@ -1,6 +1,6 @@
 from .util import *
 
-FPS = 144
+FPS = 60
 WIDTH, HEIGHT = 960, 580
 
 DIR_IMAGES = 'files/assets/images/'

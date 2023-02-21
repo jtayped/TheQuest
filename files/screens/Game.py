@@ -4,6 +4,7 @@ from ..elements.player import Player
 from ..elements.asteroid import Asteroid
 from ..elements.explosion import Explosion
 from ..elements.bullet import Bullet
+from ..elements.magazine import Magazine
 
 
 class Level:
@@ -16,7 +17,7 @@ class Level:
 
 
         # Player
-        self.playerMoveSpeed = 4
+        self.playerMoveSpeed = 5
         self.playerInitPos = WIDTH//15, HEIGHT//2
         self.playerSprite = pygame.transform.scale_by(pygame.image.load(DIR_IMAGES+'players/'+random.choice(os.listdir(DIR_IMAGES+'players'))), 1.25)
 
@@ -42,19 +43,22 @@ class Level:
 
         # Explosions
         self.explosions = []
-        self.explosionSpeed = 0.15
+        self.explosionSpeed = 0.3
         self.explosionSpriteList = getSpriteList(DIR_IMAGES+'explosionSpritesheet.png', 12)
     
 
         # Bullets
         self.bullets = []
-        self.bulletSpeed = 2
+        self.bulletSpeed = 5
         self.bulletImage = pygame.transform.scale_by(pygame.image.load(DIR_IMAGES+'bullet.png'), 0.025)
 
         self.shootCoolDownTimer = 0
         self.shootCoolDownTime = 0.5
 
         self.shootSound = pygame.mixer.Sound(DIR_SFX+'shoot.wav')
+
+        self.reload = False
+        self.magazine = Magazine(self.screen, 5, self.bulletImage)
 
     
     ################
@@ -75,15 +79,22 @@ class Level:
         bullet = Bullet(self.screen, self.bulletImage, [x, y], self.bulletSpeed)
         self.bullets.append(bullet)
 
+        self.magazine.bulletsInMagazine -= 1
+
         self.shootSound.play()
 
     def controls(self):
         self.shootCoolDownTimer += 1
+        
+        noBullets = self.magazine.noBullets()
 
         key = pygame.key.get_pressed()
-        if key[pygame.K_SPACE] and self.shootCoolDownTimer > self.shootCoolDownTime*FPS:
+        if key[pygame.K_SPACE] and self.shootCoolDownTimer > self.shootCoolDownTime*FPS and not noBullets and not self.magazine.reloading:
             self.shootCoolDownTimer = 0
             self.shoot()
+        else:
+            if self.reload and not self.magazine.reloading:
+                self.magazine.reload()
 
     def bulletsUpdate(self):
         self.bullets = [bullet for bullet in self.bullets if bullet.onScreen()]
@@ -100,7 +111,7 @@ class Level:
         sprite = pygame.transform.rotate(pygame.transform.scale_by(sprite, random.uniform(0.5, 1.5)), random.randint(0, 360))
         spriteWidth, spriteHeight = sprite.get_width(), sprite.get_height()
 
-        speed = random.uniform(1, 3)
+        speed = random.uniform(2, 6)
         rotateSpeed = random.uniform(-0.5, 0.5)
 
         y = random.randint(0, HEIGHT-spriteHeight)
@@ -122,23 +133,23 @@ class Level:
         for asteroid in self.asteroids:
             asteroid.update()
             
-
-            offset = (asteroid.rect.x-self.player.rect.x, asteroid.rect.y-self.player.rect.y)
-            overlap = self.player.mask.overlap(asteroid.mask, offset)
-
-            if overlap != None:
-                self.createExplosion((overlap[0]+self.player.rect.x, overlap[1]+self.player.rect.y), self.explosionSpriteList)
-                self.asteroids.remove(asteroid)
-                self.player.lives -= 1
-            
-            for bullet in self.bullets:
-                offset = (asteroid.rect.x-bullet.rect.x, asteroid.rect.y-bullet.rect.y)
-                overlap = bullet.mask.overlap(asteroid.mask, offset)
+            if asteroid.onScreen():
+                offset = (asteroid.rect.x-self.player.rect.x, asteroid.rect.y-self.player.rect.y)
+                overlap = self.player.mask.overlap(asteroid.mask, offset)
 
                 if overlap != None:
-                    self.bullets.remove(bullet)
+                    self.createExplosion((overlap[0]+self.player.rect.x, overlap[1]+self.player.rect.y), self.explosionSpriteList)
                     self.asteroids.remove(asteroid)
-                    self.createExplosion((overlap[0]+bullet.x, overlap[1]+bullet.y), self.explosionSpriteList)
+                    self.player.lives -= 1
+                
+                for bullet in self.bullets:
+                    offset = (asteroid.rect.x-bullet.rect.x, asteroid.rect.y-bullet.rect.y)
+                    overlap = bullet.mask.overlap(asteroid.mask, offset)
+
+                    if overlap != None:
+                        self.bullets.remove(bullet)
+                        self.asteroids.remove(asteroid)
+                        self.createExplosion((overlap[0]+bullet.x, overlap[1]+bullet.y), self.explosionSpriteList)
 
 
     def asteroidManager(self):
@@ -163,10 +174,14 @@ class Level:
     ################################
 
     def events(self):
+        self.reload = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r:
+                    self.reload = True
 
     def update(self):
         pygame.display.set_caption(f'{round(self.clock.get_fps())}')
@@ -180,6 +195,7 @@ class Level:
         self.bulletsUpdate()
         self.player.update()
         self.explosionUpdate()
+        self.magazine.update()
 
         if self.player.lives <= 0:
             self.__init__(self.screen, self.clock)
