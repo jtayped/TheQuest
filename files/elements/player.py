@@ -1,4 +1,4 @@
-import pygame
+import pygame, math
 from ..misc.settings import *
 
 class Player:
@@ -13,6 +13,7 @@ class Player:
         self.mask = pygame.mask.from_surface(self.sprite)
 
         self.lives = 3
+        self.sinN = 0
 
     ################
     ### Movement ###

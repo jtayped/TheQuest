@@ -28,4 +28,3 @@ class Bullet:
     def update(self):
         self.movement()
         self.draw()
-        self.screen.blit(self.mask.to_surface(unsetcolor=(0, 0, 0, 0), setcolor=(255, 0, 0, 200)), (self.rect.topleft))

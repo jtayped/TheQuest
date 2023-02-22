@@ -22,6 +22,7 @@ class Level:
         self.playerSprite = pygame.transform.scale_by(pygame.image.load(DIR_IMAGES+'players/'+random.choice(os.listdir(DIR_IMAGES+'players'))), 1.25)
 
         self.player = Player(self.screen, self.playerSprite, self.playerInitPos, self.playerMoveSpeed)
+        self.livesUI = Magazine(self.screen, 'topright', self.player.lives, self.playerSprite)
     
 
         # Asteroids
@@ -58,7 +59,7 @@ class Level:
         self.shootSound = pygame.mixer.Sound(DIR_SFX+'shoot.wav')
 
         self.reload = False
-        self.magazine = Magazine(self.screen, 5, self.bulletImage)
+        self.magazine = Magazine(self.screen, 'topleft', 5, self.bulletImage)
 
     
     ################
@@ -141,6 +142,7 @@ class Level:
                     self.createExplosion((overlap[0]+self.player.rect.x, overlap[1]+self.player.rect.y), self.explosionSpriteList)
                     self.asteroids.remove(asteroid)
                     self.player.lives -= 1
+                    self.livesUI.bulletsInMagazine -= 1
                 
                 for bullet in self.bullets:
                     offset = (asteroid.rect.x-bullet.rect.x, asteroid.rect.y-bullet.rect.y)
@@ -196,6 +198,7 @@ class Level:
         self.player.update()
         self.explosionUpdate()
         self.magazine.update()
+        self.livesUI.update()
 
         if self.player.lives <= 0:
             self.__init__(self.screen, self.clock)

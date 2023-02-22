@@ -1,15 +1,16 @@
 import pygame, time
+from ..misc.settings import WIDTH
 
 
 class Magazine:
-    def __init__(self, screen, nBulletsInit, bulletImage) -> None:
+    def __init__(self, screen, pos, nBulletsInit, bulletImage) -> None:
         self.screen = screen
+        self.pos = pos
         self.nBulletsInit = nBulletsInit
 
+        self.bulletImage = pygame.transform.rotate(bulletImage, -90)
 
-        self.bulletImage = pygame.transform.rotate(bulletImage, 90)
-
-        alpha = 128
+        alpha = 75
         self.bulletImageShot = self.bulletImage.copy()
         self.bulletImageShot.fill((255, 255, 255, alpha), None, pygame.BLEND_RGBA_MULT)
 
@@ -18,16 +19,24 @@ class Magazine:
 
         self.bulletsInMagazine = self.nBulletsInit
         self.spacer = 20
+        self.totalWidth = (self.spacer)*nBulletsInit + self.bulletImageWidth*nBulletsInit
+
+        self.x, self.y = self.spacer, self.spacer
+        if pos == 'topright':
+            self.x, self.y = WIDTH-self.totalWidth-self.spacer, self.spacer
+
         self.reloading = False
     
     def noBullets(self):
         return self.bulletsInMagazine <= 0
 
     def drawBulletsInMagazine(self, index):
-        self.screen.blit(self.bulletImage, (self.spacer+index*self.bulletImageWidth+self.spacer*index, self.spacer))
+        x, y = self.x+self.spacer+index*self.bulletImageWidth+self.spacer*index, self.y
+        self.screen.blit(self.bulletImage, (x, y))
     
     def drawBulletsShot(self, index):
-        self.screen.blit(self.bulletImageShot, (self.spacer+index*self.bulletImageWidth+self.spacer*index, self.spacer))
+        x, y = self.x+self.spacer+index*self.bulletImageWidth+self.spacer*index, self.y
+        self.screen.blit(self.bulletImageShot, (x, y))
 
     def reload(self):
         self.reloading = True
