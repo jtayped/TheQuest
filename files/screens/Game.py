@@ -16,6 +16,9 @@ class Level:
 
         # Game Loop Vars
         self.gameOver = False
+        self.pixelFont = pygame.font.Font(DIR_FONTS+'pixelFont.ttf', 50)
+        self.levelIncrease = False
+        self.levelStartTime = time.time()
 
 
         # Player
@@ -23,6 +26,7 @@ class Level:
         self.playerSprite = pygame.transform.scale_by(pygame.image.load(DIR_IMAGES+'players/'+random.choice(os.listdir(DIR_IMAGES+'players'))), WIDTH/900)
 
         self.player = Player(self.screen, self.playerSprite, PLAYER_INIT_POS, PLAYER_SPEED, self.lives)
+        self.nLevel = 1
     
 
         # Asteroids
@@ -33,7 +37,8 @@ class Level:
             sprite = pygame.image.load(DIR_IMAGES+'asteroids/'+asteroidSprite)
             self.asteroidSprites.append(sprite)
         
-        self.asteroidBufferScale = 1.5 # Buffer Space Multiplier for Width
+        self.asteroidMinimumSpeed = ASTEROID_MIN_SPEED
+        self.asteroidBufferScale = 2 # Buffer Space Multiplier for Width
         self.asteroidsOnScreen = int(5*self.asteroidBufferScale)
 
         self.asteroidsInit()
@@ -57,11 +62,12 @@ class Level:
         self.reload = False
         self.startReloadBulletTime = 0
         self.bulletReloadSound = pygame.mixer.Sound(DIR_SFX+'bulletReload.wav')
+        self.reloadStart = pygame.mixer.Sound(DIR_SFX+"reloadStart.wav")
 
         # UI #
         # Lives UI
-        livesUISpacer, livesUIMargin = 20, 20
-        livesImage = pygame.transform.scale_by(self.playerSprite, 0.8)
+        livesUISpacer, livesUIMargin = 20, 40
+        livesImage = pygame.transform.scale_by(self.playerSprite, 1.25)
         livesUITotalWidth = self.lives*livesImage.get_width()+(self.lives-1)*livesUISpacer
 
         x, y = WIDTH-livesUITotalWidth-livesUIMargin, livesUIMargin
@@ -69,9 +75,9 @@ class Level:
         ####
 
         # Bullets UI
-        bulletsUISpacer, bulletsUIMargin = 20, 20
+        bulletsUISpacer, bulletsUIMargin = 30, 40
         x, y = bulletsUIMargin, bulletsUIMargin
-        bulletsImage = pygame.transform.rotate(pygame.transform.scale_by(self.bulletImage, 1.25), 90)
+        bulletsImage = pygame.transform.rotate(pygame.transform.scale_by(self.bulletImage, 1.75), 90)
         self.bulletsUI = Counter(self.screen, [x, y], N_BULLETS_IN_MAGAZINE, N_BULLETS_IN_MAGAZINE, bulletsImage, bulletsUISpacer, True)
 
         ####
@@ -91,6 +97,27 @@ class Level:
     def asteroidsInit(self):
         for i in range(self.asteroidsOnScreen):
             self.createAsteroid(init=True)
+
+    ################
+    ##### Stats ####
+    ################
+
+    def writeLevel(self):
+        x, y = WIDTH//2, 5
+        writeText(self.screen, self.pixelFont, f'{self.nLevel}', 'white', (x, y), align='centertop')
+    
+    def difficultyIncrease(self):
+        self.asteroidsOnScreen += ADDITIONAL_ASTEROIDS_STEP
+        self.asteroidMinimumSpeed *= 1.125
+
+    def levelManager(self):
+        if time.time() - self.levelStartTime > LEVEL_STEP_TIME:
+            self.levelIncrease = True
+            if len(self.asteroids) == 0:
+                self.levelIncrease = False
+                self.difficultyIncrease()
+                self.levelStartTime = time.time()
+
 
     ################
     ##### Stars ####
@@ -167,7 +194,7 @@ class Level:
         sprite = pygame.transform.rotate(pygame.transform.scale_by(sprite, random.uniform(WIDTH/2000, WIDTH/550)), random.randint(0, 360))
         spriteHeight = sprite.get_height()
 
-        speed = random.uniform(0.1, 0.3)
+        speed = self.asteroidMinimumSpeed + random.uniform(0, 0.2)
         rotateSpeed = random.uniform(-0.025, 0.025)
 
         y = random.randint(spriteHeight//2, HEIGHT-spriteHeight//2)
@@ -180,12 +207,12 @@ class Level:
         self.asteroids.append(asteroid)
 
     def asteroidCreator(self):
-        if len(self.asteroids) < self.asteroidsOnScreen:
+        if len(self.asteroids) < self.asteroidsOnScreen and not self.levelIncrease:
             for i in range(self.asteroidsOnScreen - len(self.asteroids)):
                 self.createAsteroid()
 
     def checkPlayerAsteroidCollision(self, asteroid):
-        if asteroid.rect.x < WIDTH/2:
+        if asteroid.rect.x < self.player.rect.right+50:
             offset = (asteroid.rect.x-self.player.rect.x, asteroid.rect.y-self.player.rect.y)
             overlap = self.player.mask.overlap(asteroid.mask, offset)
 
@@ -239,9 +266,9 @@ class Level:
     ################
 
     def explosionUpdate(self):
-        self.explosions = [explosion for explosion in self.explosions if not explosion.finished()]
+        self.explosions = [explosion for explosion in self.explosions if not explosion.finished(self.dt)]
         for explosion in self.explosions:
-            explosion.update(self.dt)
+            explosion.update()
         
     def createExplosion(self, pos, spriteList):
         explosion = Explosion(self.screen, pos, spriteList, EXPLOSION_ANIMATION_SPEED, random.choice(self.explosionSounds))
@@ -257,12 +284,15 @@ class Level:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_r:
+                if event.key == pygame.K_r and not self.bulletsUI.nCurrentItems == self.bulletsUI.nTotalItems:
                     self.startReloadBulletTime = time.time()
                     self.reload = not self.reload
 
+                    if self.reload:
+                        self.reloadStart.play()
+
     def update(self):
-        pygame.display.set_caption(f'{round(self.clock.get_fps())}')
+        #pygame.display.set_caption(f'{round(self.clock.get_fps())}')
         self.events()
         self.screen.fill('#020018')
 
@@ -270,6 +300,7 @@ class Level:
 
         self.controls()
         self.reloadManager()
+        self.levelManager()
 
         self.starManager()
         self.asteroidManager()
@@ -279,9 +310,12 @@ class Level:
 
         self.livesUI.update()
         self.bulletsUI.update()
+        self.writeLevel()
 
         if self.player.lives <= 0:
             self.__init__(self.screen, self.clock)
+
+        #writeText(self.screen, self.pixelFont, f'{round(self.clock.get_fps())}', 'red', (10, HEIGHT/3))
 
         #####################
 

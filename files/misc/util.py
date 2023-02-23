@@ -6,7 +6,9 @@ def writeText(screen, font, text, color, pos, align='topleft'):
     textRect = textSurface.get_rect(topleft=pos)
 
     if align == 'center':
-        textRect.center = pos[0]
+        textRect.center = pos
+    elif align == 'centertop':
+        textRect.centerx = pos[0]
 
     screen.blit(textSurface, textRect)
 

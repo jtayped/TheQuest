@@ -1,10 +1,14 @@
 from .util import *
 
 FPS = 0
-WIDTH, HEIGHT = 960, 580
+WIDTH, HEIGHT = 1920, 1080
 
 DIR_IMAGES = 'files/assets/images/'
 DIR_SFX = 'files/assets/sound/sfx/'
+DIR_FONTS = 'files/assets/fonts/'
+
+LEVEL_STEP_TIME = 3
+ADDITIONAL_ASTEROIDS_STEP = 2
 
 # Player
 PLAYER_SPEED = 0.5
@@ -13,11 +17,15 @@ PLAYER_LIVES = 3
 PLAYER_INIT_POS = WIDTH//15, HEIGHT//2
 
 # Bullet
-BULLET_ACCELERATION = 0.25
+BULLET_ACCELERATION = WIDTH/2500
+print(BULLET_ACCELERATION)
 BULLET_COOLDOWN = 0.5
 
 N_BULLETS_IN_MAGAZINE = 6
 BULLET_RELOAD_TIME = 0.5
+
+# Asteroids
+ASTEROID_MIN_SPEED = 0.1
 
 
 # Explosions
