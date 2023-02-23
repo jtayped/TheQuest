@@ -1,5 +1,5 @@
 import pygame
-
+from ..misc.settings import *
 
 class Asteroid:
     def __init__(self, screen, initSprite, pos, speed, rotateSpeed) -> None:
@@ -21,21 +21,21 @@ class Asteroid:
     def updateMask(self):
         self.mask = pygame.mask.from_surface(self.sprite)
 
-    def rotate(self):
-        self.angle += self.rotateSpeed
+    def rotate(self, dt):
+        self.angle += self.rotateSpeed*dt
         self.sprite = pygame.transform.rotate(self.initSprite, self.angle)
         self.rect = self.sprite.get_rect(center=self.rect.center)
 
-    def movement(self):
-        self.x -= self.speed
+    def movement(self, dt):
+        self.x -= self.speed*dt
         self.rect.center = (self.x, self.y)
-        self.rotate()
+        self.rotate(dt)
 
         self.updateMask()
 
     def draw(self):
         self.screen.blit(self.sprite, self.rect)
 
-    def update(self):
-        self.movement()
+    def update(self, dt):
+        self.movement(dt)
         self.draw()

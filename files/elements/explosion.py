@@ -23,13 +23,13 @@ class Explosion:
         self.x -= self.spriteWidth//2
         self.y -= self.spriteHeight//2
 
-    def animation(self):
-        self.animationIndex += self.explosionSpeed
+    def animation(self, dt):
+        self.animationIndex += self.explosionSpeed*dt
         self.sprite = self.spriteList[int(self.animationIndex)]
 
     def draw(self):
         self.screen.blit(self.sprite, (self.x, self.y))
 
-    def update(self):
-        self.animation()
+    def update(self, dt):
+        self.animation(dt)
         self.draw()
