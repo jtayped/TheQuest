@@ -31,7 +31,7 @@ class Asteroid:
         self.rect.center = (self.x, self.y)
         self.rotate(dt)
 
-        self.updateMask()
+        #self.updateMask()
 
     def draw(self):
         self.screen.blit(self.sprite, self.rect)

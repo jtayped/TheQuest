@@ -19,14 +19,14 @@ class Bullet:
     def onScreen(self):
         return self.x < WIDTH
 
-    def movement(self):
+    def movement(self, dt):
         self.rect.topleft = (self.x, self.y)
-        self.speed += self.acceleration
+        self.speed += self.acceleration*dt
         self.x += self.speed
     
     def draw(self):
         self.screen.blit(self.image, self.rect)
 
-    def update(self):
-        self.movement()
+    def update(self, dt):
+        self.movement(dt)
         self.draw()

@@ -56,6 +56,7 @@ class Level:
         self.bullets = []
         self.bulletImage = pygame.transform.scale_by(pygame.image.load(DIR_IMAGES+'bullet.png'), 0.025)
         self.shootCoolDownTimer = time.time()
+        self.bulletAcceleration = BULLET_ACCELERATION
 
         self.shootSound = pygame.mixer.Sound(DIR_SFX+'shoot.wav')
 
@@ -114,6 +115,7 @@ class Level:
         if time.time() - self.levelStartTime > LEVEL_STEP_TIME:
             self.levelIncrease = True
             if len(self.asteroids) == 0:
+                self.nLevel += 1
                 self.levelIncrease = False
                 self.difficultyIncrease()
                 self.levelStartTime = time.time()
@@ -182,7 +184,7 @@ class Level:
     def bulletsUpdate(self):
         self.bullets = [bullet for bullet in self.bullets if bullet.onScreen()]
         for bullet in self.bullets:
-            bullet.update()
+            bullet.update(self.dt)
 
 
     ################
@@ -212,7 +214,9 @@ class Level:
                 self.createAsteroid()
 
     def checkPlayerAsteroidCollision(self, asteroid):
-        if asteroid.rect.x < self.player.rect.right+50:
+        if asteroid.rect.x < self.player.rect.right+50 and self.player.rect.colliderect(asteroid.rect):
+            asteroid.updateMask()
+
             offset = (asteroid.rect.x-self.player.rect.x, asteroid.rect.y-self.player.rect.y)
             overlap = self.player.mask.overlap(asteroid.mask, offset)
 
@@ -226,7 +230,11 @@ class Level:
             bullet.rect.bottom < asteroid.rect.top or
             bullet.rect.top > asteroid.rect.bottom):
             return None
+        
+        if not bullet.rect.colliderect(bullet.rect):
+            return None
 
+        asteroid.updateMask()
         offset = (asteroid.rect.x-bullet.rect.x, asteroid.rect.y-bullet.rect.y)
         overlap = bullet.mask.overlap(asteroid.mask, offset)
 
